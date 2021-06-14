@@ -34,4 +34,17 @@ func main() {
 	fmt.Println(acct.Language)
 	fmt.Println(acct.Perfs.Blitz.Rating)
 	fmt.Println(acct.Email)
+
+	if users, err := client.FetchUserStatus([]string{"chess-network", "STL_Nakamura"}); err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(users)
+	}
+
+	if topTen, err := client.GetTopTenPlayers(); err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Printf("%+v", topTen)
+	}
+
 }
