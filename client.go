@@ -131,3 +131,76 @@ func (c *Client) GetTopTenPlayers() (*TopTenPlayer, error) {
 
 	return &topTen, nil
 }
+
+func (c *Client) GetLeaderBoard(number int, gameType string) (interface{}, error) {
+	var leaderType interface{}
+	var resp *http.Response
+	var err error
+
+	params := c.DefaultRequestParams()
+	params.Accept = "application/vnd.lichess.v3+json"
+
+	endPoint := fmt.Sprintf("/player/top/%d/%s", number, gameType)
+	switch gameType {
+	case "blitz":
+		var blitzLeader BlitzLeader
+		resp, err = c.doGet(endPoint, &blitzLeader, params)
+		leaderType = blitzLeader
+	case "bullet":
+		var bulletLeader BulletLeader
+		resp, err = c.doGet(endPoint, &bulletLeader, params)
+		leaderType = bulletLeader
+	case "ultraBullet":
+		var leader UltraBulletLeader
+		resp, err = c.doGet(endPoint, &leader, params)
+		leaderType = leader
+	case "rapid":
+		var leader RapidLeader
+		resp, err = c.doGet(endPoint, &leader, params)
+		leaderType = leader
+	case "classical":
+		var leader ClassicalLeader
+		resp, err = c.doGet(endPoint, &leader, params)
+		leaderType = leader
+	case "chess960":
+		var leader Chess960Leader
+		resp, err = c.doGet(endPoint, &leader, params)
+		leaderType = leader
+	case "crazyhouse":
+		var leader CrazyHouseLeader
+		resp, err = c.doGet(endPoint, &leader, params)
+		leaderType = leader
+	case "antichess":
+		var leader AntiChessLeader
+		resp, err = c.doGet(endPoint, &leader, params)
+		leaderType = leader
+	case "atomic":
+		var leader AtomicLeader
+		resp, err = c.doGet(endPoint, &leader, params)
+		leaderType = leader
+	case "horde":
+		var leader HordeLeader
+		resp, err = c.doGet(endPoint, &leader, params)
+		leaderType = leader
+	case "kingOfTheHill":
+		var leader KingOfTheHillLeader
+		resp, err = c.doGet(endPoint, &leader, params)
+		leaderType = leader
+	case "racingKings":
+		var leader RacingKingsLeader
+		resp, err = c.doGet(endPoint, &leader, params)
+		leaderType = leader
+	case "threeCheck":
+		var leader ThreeCheckLeader
+		resp, err = c.doGet(endPoint, &leader, params)
+		leaderType = leader
+	}
+
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	return leaderType, nil
+}

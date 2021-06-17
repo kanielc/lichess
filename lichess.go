@@ -27,24 +27,31 @@ func main() {
 		HttpClient: &httpClient,
 	}
 
-	acct, _ := client.FetchAccount()
+	//acct, _ := client.FetchAccount()
 
 	//bodyBytes, _ := ioutil.ReadAll(resp.Body)
 	//fmt.Println(string(bodyBytes))
-	fmt.Println(acct.Language)
-	fmt.Println(acct.Perfs.Blitz.Rating)
-	fmt.Println(acct.Email)
+	/*
+		fmt.Println(acct.Language)
+		fmt.Println(acct.Perfs.Blitz.Rating)
+		fmt.Println(acct.Email)
 
-	if users, err := client.FetchUserStatus([]string{"chess-network", "STL_Nakamura"}); err != nil {
+		if users, err := client.FetchUserStatus([]string{"chess-network", "STL_Nakamura"}); err != nil {
+			fmt.Println(err)
+		} else {
+			fmt.Println(users)
+		}
+
+		if topTen, err := client.GetTopTenPlayers(); err != nil {
+			fmt.Println(err)
+		} else {
+			fmt.Printf("%+v", topTen)
+		}*/
+
+	if leader, err := client.GetLeaderBoard(10, "horde"); err != nil {
 		fmt.Println(err)
 	} else {
-		fmt.Println(users)
+		str := leader.(HordeLeader)
+		fmt.Println(str.Users[0].ID, str.Users[0].Username)
 	}
-
-	if topTen, err := client.GetTopTenPlayers(); err != nil {
-		fmt.Println(err)
-	} else {
-		fmt.Printf("%+v", topTen)
-	}
-
 }
