@@ -144,3 +144,55 @@ type TopTenPlayer struct {
 	RacingKings   []RacingKingsPublicAccount   `json:"racingKings"`
 	ThreeCheck    []ThreeCheckPublicAccount    `json:"threeCheck"`
 }
+
+type BlitzLeader struct {
+	Users []BlitzPublicAccount `json:"users"`
+}
+
+type BulletLeader struct {
+	Users []BulletPublicAccount `json:"users"`
+}
+
+type UltraBulletLeader struct {
+	Users []UltraBulletPublicAccount `json:"users"`
+}
+
+type RapidLeader struct {
+	Users []RapidPublicAccount `json:"users"`
+}
+
+type ClassicalLeader struct {
+	Users []ClassicalPublicAccount `json:"users"`
+}
+
+type Chess960Leader struct {
+	Users []Chess960PublicAccount `json:"users"`
+}
+
+type CrazyHouseLeader struct {
+	Users []CrazyHousePublicAccount `json:"users"`
+}
+
+type AntiChessLeader struct {
+	Users []AntichessPublicAccount `json:"users"`
+}
+
+type AtomicLeader struct {
+	Users []AtomicPublicAccount `json:"users"`
+}
+
+type HordeLeader struct {
+	Users []HordePublicAccount `json:"users"`
+}
+
+type KingOfTheHillLeader struct {
+	Users []KingOfTheHillPublicAccount `json:"users"`
+}
+
+type RacingKingsLeader struct {
+	Users []RacingKingsPublicAccount `json:"users"`
+}
+
+type ThreeCheckLeader struct {
+	Users []ThreeCheckPublicAccount `json:"users"`
+}
