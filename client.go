@@ -103,6 +103,18 @@ func (c *Client) FetchAccount() (*Account, error) {
 	return &acct, nil
 }
 
+func (c *Client) GetUser(id string) (*Account, error) {
+	var acct Account
+
+	resp, err := c.doGet("/api/user/"+id, &acct, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	return &acct, nil
+}
+
 func (c *Client) FetchUserStatus(users []string) ([]UserStatus, error) {
 	statuses := make([]UserStatus, 0)
 
@@ -203,4 +215,16 @@ func (c *Client) GetLeaderBoard(number int, gameType string) (interface{}, error
 	defer resp.Body.Close()
 
 	return leaderType, nil
+}
+
+func (c *Client) GetRatingHistory(id string) ([]RatingHistory, error) {
+	var ratingHistory = make([]RatingHistory, 0)
+
+	resp, err := c.doGet("/api/user/"+id+"/rating-history", &ratingHistory, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	return ratingHistory, nil
 }

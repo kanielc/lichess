@@ -196,3 +196,8 @@ type RacingKingsLeader struct {
 type ThreeCheckLeader struct {
 	Users []ThreeCheckPublicAccount `json:"users"`
 }
+
+type RatingHistory struct {
+	Name   string  `json:"name"`
+	Points [][]int `json:"points"`
+}
