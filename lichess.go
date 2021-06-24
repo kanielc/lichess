@@ -32,38 +32,50 @@ func main() {
 	//bodyBytes, _ := ioutil.ReadAll(resp.Body)
 	//fmt.Println(string(bodyBytes))
 	/*
-			fmt.Println(acct.Language)
-			fmt.Println(acct.Perfs.Blitz.Rating)
-			fmt.Println(acct.Email)
+					fmt.Println(acct.Language)
+					fmt.Println(acct.Perfs.Blitz.Rating)
+					fmt.Println(acct.Email)
 
-			if users, err := client.FetchUserStatus([]string{"chess-network", "STL_Nakamura"}); err != nil {
+					if users, err := client.FetchUserStatus([]string{"chess-network", "STL_Nakamura"}); err != nil {
+						fmt.Println(err)
+					} else {
+						fmt.Println(users)
+					}
+
+					if topTen, err := client.GetTopTenPlayers(); err != nil {
+						fmt.Println(err)
+					} else {
+						fmt.Printf("%+v", topTen)
+					}
+
+				if leader, err := client.GetLeaderBoard(10, "horde"); err != nil {
+					fmt.Println(err)
+				} else {
+					str := leader.(HordeLeader)
+					fmt.Println(str.Users[0].ID, str.Users[0].Username)
+				}
+
+			if player, err := client.GetUser("chess-network"); err != nil {
 				fmt.Println(err)
 			} else {
-				fmt.Println(users)
+				fmt.Println(player.ID, player.Online)
 			}
 
-			if topTen, err := client.GetTopTenPlayers(); err != nil {
+			if playerHistory, err := client.GetRatingHistory("chess-network"); err != nil {
 				fmt.Println(err)
 			} else {
-				fmt.Printf("%+v", topTen)
+				fmt.Println(playerHistory[0].Name, playerHistory[0].Points[0])
 			}
-
-		if leader, err := client.GetLeaderBoard(10, "horde"); err != nil {
+		if players, err := client.GetUsers("chess-network", "STL_Nakamura"); err != nil {
 			fmt.Println(err)
 		} else {
-			str := leader.(HordeLeader)
-			fmt.Println(str.Users[0].ID, str.Users[0].Username)
-		}*/
-
-	if player, err := client.GetUser("chess-network"); err != nil {
+			fmt.Println(len(players))
+			fmt.Println(players[0].ID, players[1].ID, players[1].Online)
+		}
+	*/
+	if team, err := client.GetTeamMembers("coders"); err != nil {
 		fmt.Println(err)
 	} else {
-		fmt.Println(player.ID, player.Online)
-	}
-
-	if playerHistory, err := client.GetRatingHistory("chess-network"); err != nil {
-		fmt.Println(err)
-	} else {
-		fmt.Println(playerHistory[0].Name, playerHistory[0].Points[0])
+		fmt.Println(team[0].ID, team[1].ID, team[2].ID)
 	}
 }
