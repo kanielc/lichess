@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -21,6 +23,7 @@ type Client struct {
 type RequestParams struct {
 	Method        string
 	Accept        string
+	ContentType   string
 	Body          *io.Reader
 	Authorization string
 	QueryValues   url.Values
@@ -30,6 +33,7 @@ func (c *Client) DefaultRequestParams() *RequestParams {
 	return &RequestParams{
 		Method:        "GET",
 		Accept:        "application/json",
+		ContentType:   "",
 		Authorization: fmt.Sprintf("Bearer %s", c.Token),
 		QueryValues:   url.Values{},
 	}
@@ -40,7 +44,14 @@ func (c *Client) NewRequest(url string, params *RequestParams) (*http.Request, e
 		params = c.DefaultRequestParams()
 	}
 
-	req, err := http.NewRequest(params.Method, url, strings.NewReader(params.QueryValues.Encode()))
+	var conts io.Reader
+	if params.Body != nil {
+		conts = *params.Body
+	} else {
+		conts = strings.NewReader(params.QueryValues.Encode())
+	}
+
+	req, err := http.NewRequest(params.Method, url, conts)
 	if err != nil {
 		return nil, err
 	}
@@ -48,10 +59,14 @@ func (c *Client) NewRequest(url string, params *RequestParams) (*http.Request, e
 	req.Header.Set("Authorization", params.Authorization)
 	req.Header.Set("Accept", params.Accept)
 
+	if params.ContentType != "" {
+		req.Header.Set("Content-Type", params.ContentType)
+	}
+
 	return req, err
 }
 
-func (c *Client) doGet(endPoint string, dest interface{}, params *RequestParams) (*http.Response, error) {
+func (c *Client) DoRequest(endPoint string, dest interface{}, params *RequestParams) (*http.Response, error) {
 	req, err := c.NewRequest(LichessBase+endPoint, params)
 	if err != nil {
 		return nil, err
@@ -62,10 +77,37 @@ func (c *Client) doGet(endPoint string, dest interface{}, params *RequestParams)
 		return nil, err
 	}
 
-	//fmt.Println(req.Header)
-	//bodyBytes, _ := ioutil.ReadAll(resp.Body)
-	//fmt.Println(string(bodyBytes))
 	err = json.NewDecoder(resp.Body).Decode(dest)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (c *Client) DoRequestMultiread(endPoint string, dest []interface{}, filler *interface{}, params *RequestParams) (*http.Response, error) {
+	req, err := c.NewRequest(LichessBase+endPoint, params)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.HttpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	decoder := json.NewDecoder(resp.Body)
+
+	for decoder.More() {
+		err = decoder.Decode(filler)
+
+		if err != nil {
+			return nil, err
+		}
+		var copy = *filler
+		dest = append(dest, copy)
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +117,7 @@ func (c *Client) doGet(endPoint string, dest interface{}, params *RequestParams)
 
 func (c *Client) FetchEmail() (string, error) {
 	var email Email
-	resp, err := c.doGet("/api/account/email", &email, nil)
+	resp, err := c.DoRequest("/api/account/email", &email, nil)
 	if err != nil {
 		return "", err
 	}
@@ -86,7 +128,7 @@ func (c *Client) FetchEmail() (string, error) {
 
 func (c *Client) FetchAccount() (*Account, error) {
 	var acct Account
-	resp, err := c.doGet("/api/account", &acct, nil)
+	resp, err := c.DoRequest("/api/account", &acct, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +148,7 @@ func (c *Client) FetchAccount() (*Account, error) {
 func (c *Client) GetUser(id string) (*Account, error) {
 	var acct Account
 
-	resp, err := c.doGet("/api/user/"+id, &acct, nil)
+	resp, err := c.DoRequest("/api/user/"+id, &acct, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -115,14 +157,35 @@ func (c *Client) GetUser(id string) (*Account, error) {
 	return &acct, nil
 }
 
+func (c *Client) GetUsers(ids ...string) ([]Account, error) {
+	var accts = make([]Account, 0)
+	allIds := strings.Join(ids, ",")
+	params := c.DefaultRequestParams()
+	params.Method = "POST"
+	var read io.Reader = bytes.NewReader([]byte(allIds))
+	params.Body = &read
+
+	resp, err := c.DoRequest("/api/users", &accts, params)
+
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	return accts, nil
+}
+
 func (c *Client) FetchUserStatus(users []string) ([]UserStatus, error) {
+	if len(users) == 0 {
+		return nil, errors.New("no users provided, cannot be nil or empty")
+	}
 	statuses := make([]UserStatus, 0)
 
 	var ids string
 	if len(users) > 0 {
 		ids = "?ids=" + strings.Join(users, ",")
 	}
-	resp, err := c.doGet("/api/users/status"+ids, &statuses, nil)
+	resp, err := c.DoRequest("/api/users/status"+ids, &statuses, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -131,11 +194,45 @@ func (c *Client) FetchUserStatus(users []string) ([]UserStatus, error) {
 	return statuses, nil
 }
 
+func (c *Client) GetTeamMembers(teamId string) ([]Account, error) {
+	if teamId == "" {
+		return nil, errors.New("no valid teamId provided, cannot be empty")
+	}
+
+	params := c.DefaultRequestParams()
+	params.Accept = "application/x-ndjson"
+	team := make([]Account, 0)
+
+	req, err := c.NewRequest(LichessBase+"/api/team/"+teamId+"/users", params)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.HttpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	var acct Account
+	decoder := json.NewDecoder(resp.Body)
+	for decoder.More() {
+		err = decoder.Decode(&acct)
+
+		if err != nil {
+			return nil, err
+		}
+		team = append(team, acct)
+	}
+	defer resp.Body.Close()
+
+	return team, nil
+}
+
 func (c *Client) GetTopTenPlayers() (*TopTenPlayer, error) {
 	var topTen TopTenPlayer
 	params := c.DefaultRequestParams()
 	params.Accept = "application/vnd.lichess.v3+json"
-	resp, err := c.doGet("/player", &topTen, params)
+	resp, err := c.DoRequest("/player", &topTen, params)
 	if err != nil {
 		return nil, err
 	}
@@ -156,60 +253,59 @@ func (c *Client) GetLeaderBoard(number int, gameType string) (interface{}, error
 	switch gameType {
 	case "blitz":
 		var blitzLeader BlitzLeader
-		resp, err = c.doGet(endPoint, &blitzLeader, params)
+		resp, err = c.DoRequest(endPoint, &blitzLeader, params)
 		leaderType = blitzLeader
 	case "bullet":
 		var bulletLeader BulletLeader
-		resp, err = c.doGet(endPoint, &bulletLeader, params)
+		resp, err = c.DoRequest(endPoint, &bulletLeader, params)
 		leaderType = bulletLeader
 	case "ultraBullet":
 		var leader UltraBulletLeader
-		resp, err = c.doGet(endPoint, &leader, params)
+		resp, err = c.DoRequest(endPoint, &leader, params)
 		leaderType = leader
 	case "rapid":
 		var leader RapidLeader
-		resp, err = c.doGet(endPoint, &leader, params)
+		resp, err = c.DoRequest(endPoint, &leader, params)
 		leaderType = leader
 	case "classical":
 		var leader ClassicalLeader
-		resp, err = c.doGet(endPoint, &leader, params)
+		resp, err = c.DoRequest(endPoint, &leader, params)
 		leaderType = leader
 	case "chess960":
 		var leader Chess960Leader
-		resp, err = c.doGet(endPoint, &leader, params)
+		resp, err = c.DoRequest(endPoint, &leader, params)
 		leaderType = leader
 	case "crazyhouse":
 		var leader CrazyHouseLeader
-		resp, err = c.doGet(endPoint, &leader, params)
+		resp, err = c.DoRequest(endPoint, &leader, params)
 		leaderType = leader
 	case "antichess":
 		var leader AntiChessLeader
-		resp, err = c.doGet(endPoint, &leader, params)
+		resp, err = c.DoRequest(endPoint, &leader, params)
 		leaderType = leader
 	case "atomic":
 		var leader AtomicLeader
-		resp, err = c.doGet(endPoint, &leader, params)
+		resp, err = c.DoRequest(endPoint, &leader, params)
 		leaderType = leader
 	case "horde":
 		var leader HordeLeader
-		resp, err = c.doGet(endPoint, &leader, params)
+		resp, err = c.DoRequest(endPoint, &leader, params)
 		leaderType = leader
 	case "kingOfTheHill":
 		var leader KingOfTheHillLeader
-		resp, err = c.doGet(endPoint, &leader, params)
+		resp, err = c.DoRequest(endPoint, &leader, params)
 		leaderType = leader
 	case "racingKings":
 		var leader RacingKingsLeader
-		resp, err = c.doGet(endPoint, &leader, params)
+		resp, err = c.DoRequest(endPoint, &leader, params)
 		leaderType = leader
 	case "threeCheck":
 		var leader ThreeCheckLeader
-		resp, err = c.doGet(endPoint, &leader, params)
+		resp, err = c.DoRequest(endPoint, &leader, params)
 		leaderType = leader
 	}
 
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -220,7 +316,7 @@ func (c *Client) GetLeaderBoard(number int, gameType string) (interface{}, error
 func (c *Client) GetRatingHistory(id string) ([]RatingHistory, error) {
 	var ratingHistory = make([]RatingHistory, 0)
 
-	resp, err := c.doGet("/api/user/"+id+"/rating-history", &ratingHistory, nil)
+	resp, err := c.DoRequest("/api/user/"+id+"/rating-history", &ratingHistory, nil)
 	if err != nil {
 		return nil, err
 	}
