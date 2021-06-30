@@ -201,3 +201,12 @@ type RatingHistory struct {
 	Name   string  `json:"name"`
 	Points [][]int `json:"points"`
 }
+
+type Crosstable struct {
+	Users   map[string]float32 `json:"users"`
+	NbGames uint32             `json:"nbGames"`
+	Matchup struct {
+		Users   map[string]float32 `json:"users"`
+		NbGames uint32             `json:"nbGames"`
+	} `json:"matchup"`
+}

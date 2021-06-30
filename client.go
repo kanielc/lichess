@@ -85,36 +85,6 @@ func (c *Client) DoRequest(endPoint string, dest interface{}, params *RequestPar
 	return resp, nil
 }
 
-func (c *Client) DoRequestMultiread(endPoint string, dest []interface{}, filler *interface{}, params *RequestParams) (*http.Response, error) {
-	req, err := c.NewRequest(LichessBase+endPoint, params)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := c.HttpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	decoder := json.NewDecoder(resp.Body)
-
-	for decoder.More() {
-		err = decoder.Decode(filler)
-
-		if err != nil {
-			return nil, err
-		}
-		var copy = *filler
-		dest = append(dest, copy)
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, nil
-}
-
 func (c *Client) FetchEmail() (string, error) {
 	var email Email
 	resp, err := c.DoRequest("/api/account/email", &email, nil)
@@ -323,4 +293,31 @@ func (c *Client) GetRatingHistory(id string) ([]RatingHistory, error) {
 	defer resp.Body.Close()
 
 	return ratingHistory, nil
+}
+
+func (c *Client) GetLiveStreamers() ([]BasicAccount, error) {
+	var accts = make([]BasicAccount, 0)
+
+	resp, err := c.DoRequest("/streamer/live", &accts, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	return accts, nil
+}
+
+func (c *Client) GetCrosstable(user1, user2 string) (*Crosstable, error) {
+	if user1 == "" || user2 == "" {
+		return nil, fmt.Errorf("user names must be valid and of non-nil length, given user1: %s and user2: %s", user1, user2)
+	}
+	var crosstable Crosstable
+
+	resp, err := c.DoRequest(fmt.Sprintf("/api/crosstable/%s/%s", user1, user2), &crosstable, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	return &crosstable, nil
 }

@@ -28,6 +28,14 @@ type Account struct {
 	Email          string      `json:",omitempty"`
 }
 
+type BasicAccount struct {
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Title   string `json:"title,omitempty"`
+	Playing bool   `json:"playing,omitempty"`
+	Patron  bool   `json:"patron,omitempty"`
+}
+
 type Email struct {
 	Email string `json:"email"`
 }
