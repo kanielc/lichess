@@ -78,4 +78,16 @@ func main() {
 	} else {
 		fmt.Println(team[0].ID, team[1].ID, team[2].ID)
 	}
+
+	if streamers, err := client.GetLiveStreamers(); err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(streamers[0].ID, streamers[1].ID, streamers[2].ID)
+	}
+
+	if crosstable, err := client.GetCrosstable("neio", "thibault"); err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(crosstable)
+	}
 }
