@@ -56,8 +56,13 @@ func (c *Client) NewRequest(url string, params *RequestParams) (*http.Request, e
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", params.Authorization)
-	req.Header.Set("Accept", params.Accept)
+	if params.Authorization != "" {
+		req.Header.Set("Authorization", params.Authorization)
+	}
+
+	if params.Accept != "" {
+		req.Header.Set("Accept", params.Accept)
+	}
 
 	if params.ContentType != "" {
 		req.Header.Set("Content-Type", params.ContentType)
@@ -85,7 +90,7 @@ func (c *Client) DoRequest(endPoint string, dest interface{}, params *RequestPar
 	return resp, nil
 }
 
-func (c *Client) FetchEmail() (string, error) {
+func (c *Client) GetEmail() (string, error) {
 	var email Email
 	resp, err := c.DoRequest("/api/account/email", &email, nil)
 	if err != nil {
@@ -96,7 +101,7 @@ func (c *Client) FetchEmail() (string, error) {
 	return email.Email, nil
 }
 
-func (c *Client) FetchAccount() (*Account, error) {
+func (c *Client) GetAccount() (*Account, error) {
 	var acct Account
 	resp, err := c.DoRequest("/api/account", &acct, nil)
 	if err != nil {
@@ -104,7 +109,7 @@ func (c *Client) FetchAccount() (*Account, error) {
 	}
 	defer resp.Body.Close()
 
-	email, err := c.FetchEmail()
+	email, err := c.GetEmail()
 
 	if err != nil || acct.Email == "" {
 		acct.Email = "N/A"
@@ -145,7 +150,7 @@ func (c *Client) GetUsers(ids ...string) ([]Account, error) {
 	return accts, nil
 }
 
-func (c *Client) FetchUserStatus(users []string) ([]UserStatus, error) {
+func (c *Client) GetUserStatus(users []string) ([]UserStatus, error) {
 	if len(users) == 0 {
 		return nil, errors.New("no users provided, cannot be nil or empty")
 	}
@@ -171,9 +176,11 @@ func (c *Client) GetTeamMembers(teamId string) ([]Account, error) {
 
 	params := c.DefaultRequestParams()
 	params.Accept = "application/x-ndjson"
+	params.Authorization = ""
 	team := make([]Account, 0)
 
-	req, err := c.NewRequest(LichessBase+"/api/team/"+teamId+"/users", params)
+	uri := LichessBase + "/api/team/" + teamId + "/users"
+	req, err := c.NewRequest(uri, params)
 	if err != nil {
 		return nil, err
 	}
