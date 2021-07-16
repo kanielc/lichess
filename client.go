@@ -328,3 +328,73 @@ func (c *Client) GetCrosstable(user1, user2 string) (*Crosstable, error) {
 
 	return &crosstable, nil
 }
+
+func (c *Client) GetFollows(user string) ([]Account, error) {
+	if user == "" {
+		return nil, errors.New("must have valid id to check follows of")
+	}
+
+	uri := LichessBase + "/api/user/" + user + "/following"
+	params := c.DefaultRequestParams()
+	params.Accept = "application/x-ndjson"
+
+	req, err := c.NewRequest(uri, params)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.HttpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	var follows = make([]Account, 0)
+	var acct Account
+	decoder := json.NewDecoder(resp.Body)
+	for decoder.More() {
+		err = decoder.Decode(&acct)
+
+		if err != nil {
+			return nil, err
+		}
+		follows = append(follows, acct)
+	}
+	defer resp.Body.Close()
+
+	return follows, nil
+}
+
+func (c *Client) GetFollowers(user string) ([]Account, error) {
+	if user == "" {
+		return nil, errors.New("must have valid id to check follows of")
+	}
+
+	uri := LichessBase + "/api/user/" + user + "/followers"
+	params := c.DefaultRequestParams()
+	params.Accept = "application/x-ndjson"
+
+	req, err := c.NewRequest(uri, params)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.HttpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	var followers = make([]Account, 0)
+	var acct Account
+	decoder := json.NewDecoder(resp.Body)
+	for decoder.More() {
+		err = decoder.Decode(&acct)
+
+		if err != nil {
+			return nil, err
+		}
+		followers = append(followers, acct)
+	}
+	defer resp.Body.Close()
+
+	return followers, nil
+}

@@ -109,3 +109,27 @@ func TestGetCrosstable(t *testing.T) {
 		t.Errorf("Expected to find given user in the crosstable")
 	}
 }
+
+func TestGetFollows(t *testing.T) {
+	follows, _ := client.GetFollows("thibault")
+
+	if follows[0].ID == "" {
+		t.Errorf("Expected to find follow")
+	}
+
+	if len(follows) < 10 {
+		t.Errorf("Expected to find at least 10 follows for thibault")
+	}
+}
+
+func TestGetFollowers(t *testing.T) {
+	followers, _ := client.GetFollowers("thibault")
+
+	if followers[0].ID == "" {
+		t.Errorf("Expected to find follow")
+	}
+
+	if len(followers) < 2 {
+		t.Errorf("Expected to find at least 2 followers for thibault")
+	}
+}
