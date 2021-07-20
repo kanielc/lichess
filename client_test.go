@@ -133,3 +133,15 @@ func TestGetFollowers(t *testing.T) {
 		t.Errorf("Expected to find at least 2 followers for thibault")
 	}
 }
+
+func TestGetGame(t *testing.T) {
+	game, _ := client.GetGame("XWWk5HG6", NewGameParam())
+
+	if game.ID == "" {
+		t.Errorf("Expected a game id in the response")
+	}
+
+	if game.Moves == "" {
+		t.Errorf("Didn't get the moves from the game")
+	}
+}

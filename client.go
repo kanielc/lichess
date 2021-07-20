@@ -398,3 +398,19 @@ func (c *Client) GetFollowers(user string) ([]Account, error) {
 
 	return followers, nil
 }
+
+func (c *Client) GetGame(gameId string, params GameParam) (*Game, error) {
+	if gameId == "" {
+		return nil, errors.New("must provide a valid game id")
+	}
+
+	var game Game
+
+	resp, err := c.DoRequest(fmt.Sprintf("/game/export/%s", gameId), &game, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	return &game, nil
+}
