@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"testing"
@@ -16,11 +18,16 @@ var client = Client{
 	HttpClient: &httpClient,
 }
 
+func printJson(data interface{}) {
+	str, _ := json.MarshalIndent(data, "", "    ")
+	fmt.Println(string(str))
+}
+
 func TestGetAccount(t *testing.T) {
 	acct, _ := client.GetAccount()
 
-	if acct.Language == "" {
-		t.Errorf("Language is missing")
+	if acct.URL == "" {
+		t.Errorf("URL is missing, invalid record")
 	}
 
 	if acct.Perfs.Blitz.Rating == 0 && acct.Perfs.Rapid.Rating == 0 && acct.Perfs.Bullet.Rating == 0 {
@@ -107,30 +114,6 @@ func TestGetCrosstable(t *testing.T) {
 
 	if _, ok := crosstable.Users["neio"]; !ok {
 		t.Errorf("Expected to find given user in the crosstable")
-	}
-}
-
-func TestGetFollows(t *testing.T) {
-	follows, _ := client.GetFollows("thibault")
-
-	if follows[0].ID == "" {
-		t.Errorf("Expected to find follow")
-	}
-
-	if len(follows) < 10 {
-		t.Errorf("Expected to find at least 10 follows for thibault")
-	}
-}
-
-func TestGetFollowers(t *testing.T) {
-	followers, _ := client.GetFollowers("thibault")
-
-	if followers[0].ID == "" {
-		t.Errorf("Expected to find follow")
-	}
-
-	if len(followers) < 2 {
-		t.Errorf("Expected to find at least 2 followers for thibault")
 	}
 }
 
